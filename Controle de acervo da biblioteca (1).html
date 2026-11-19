@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Controle de acervo da biblioteca</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f2f4f3;--surface:#fff;--ink:#16221f;--mute:#566560;--line:#d3dbd8;--lit:#1d6b58;--lit-bg:#dcefe9;--tec:#364a8f;--tec-bg:#e1e6f6;--warn:#9c3626;--warn-bg:#f8e3df;--btn:#16221f;--btn-ink:#fff;color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#101615;--surface:#18201e;--ink:#e7efec;--mute:#9aaba6;--line:#2b3633;--lit:#6fd0b4;--lit-bg:#1c3a32;--tec:#a3b4f2;--tec-bg:#252f55;--warn:#f0a090;--warn-bg:#4a2620;--btn:#e7efec;--btn-ink:#101615;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#101615;--surface:#18201e;--ink:#e7efec;--mute:#9aaba6;--line:#2b3633;--lit:#6fd0b4;--lit-bg:#1c3a32;--tec:#a3b4f2;--tec-bg:#252f55;--warn:#f0a090;--warn-bg:#4a2620;--btn:#e7efec;--btn-ink:#101615;color-scheme:dark}
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 "Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",Arial,sans-serif}
+.wrap{max-width:980px;margin:0 auto;padding:24px 16px 48px}
+h1{font-size:1.6rem;margin:0 0 4px;letter-spacing:-.01em}
+.sub{color:var(--mute);margin:0 0 20px}
+.stats{display:flex;flex-wrap:wrap;gap:8px 28px;padding:14px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);margin-bottom:20px}
+.stats div{display:flex;flex-direction:column}
+.stats b{font-size:1.5rem;line-height:1.2}
+.stats span{color:var(--mute);font-size:.9rem}
+.stats .late b{color:var(--warn)}
+.tabs{display:flex;gap:4px;margin-bottom:16px;overflow-x:auto}
+.tab{font:inherit;background:none;border:0;border-bottom:3px solid transparent;padding:8px 14px;cursor:pointer;color:var(--mute)}
+.tab[aria-selected="true"]{color:var(--ink);border-color:var(--ink);font-weight:700}
+.bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:14px}
+.bar input[type=search]{flex:1 1 220px}
+input,select{font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:9px 10px;width:100%}
+.bar input{width:auto}
+label{display:block;font-weight:700;margin:0 0 4px;font-size:.95rem}
+.field{margin-bottom:14px}
+.pills{display:flex;gap:6px;flex-wrap:wrap}
+.pill{font:inherit;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:6px 12px;cursor:pointer}
+.pill:disabled{opacity:.4;cursor:not-allowed}
+.pager{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:10px 0}
+.pager .gap{color:var(--mute);padding:0 2px}
+.pill[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.btn{font:inherit;font-weight:700;background:var(--btn);color:var(--btn-ink);border:1px solid var(--btn);border-radius:6px;padding:8px 14px;cursor:pointer;white-space:nowrap}
+.btn.ghost{background:transparent;color:var(--ink);border-color:var(--line)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+:focus-visible{outline:3px solid var(--tec);outline-offset:2px}
+ul.list{list-style:none;margin:0;padding:0;background:var(--surface);border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.row{display:grid;grid-template-columns:1fr auto auto auto;gap:6px 16px;align-items:center;padding:12px 16px;border-bottom:1px solid var(--line);border-left:5px solid var(--line)}
+.row:last-child{border-bottom:0}
+.row.literatura{border-left-color:var(--lit)}
+.row.tecnico{border-left-color:var(--tec)}
+.row.late{border-left-color:var(--warn)}
+.main{display:flex;flex-direction:column;min-width:0}
+.main strong{overflow-wrap:anywhere}
+.by{color:var(--mute);font-size:.92rem}
+.tag{font-size:.85rem;font-weight:700;padding:2px 10px;border-radius:999px;justify-self:start}
+.tag.literatura{background:var(--lit-bg);color:var(--lit)}
+.tag.tecnico{background:var(--tec-bg);color:var(--tec)}
+.tag.late{background:var(--warn-bg);color:var(--warn)}
+.qty{color:var(--mute);font-size:.92rem}
+.qty.out{color:var(--warn);font-weight:700}
+.loanrow{grid-template-columns:1fr auto auto}
+.hist{grid-template-columns:auto 1fr}
+.empty{padding:32px 16px;text-align:center;color:var(--mute);background:var(--surface);border:1px dashed var(--line);border-radius:8px}
+dialog{border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink);padding:22px;width:min(440px,calc(100% - 24px))}
+dialog::backdrop{background:rgba(0,0,0,.45)}
+dialog h2{margin:0 0 14px;font-size:1.2rem}
+.actions{display:flex;gap:8px;justify-content:flex-end;margin-top:6px}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:8px;max-width:calc(100% - 32px);opacity:0;pointer-events:none;transition:opacity .2s}
+.toast.on{opacity:1}
+.warnbar.info{background:var(--lit-bg);color:var(--lit)}
+.warnbar .btn{margin-left:8px;padding:4px 10px}
+.warnbar{background:var(--warn-bg);color:var(--warn);padding:10px 14px;border-radius:8px;margin-bottom:14px}
+@media (max-width:640px){.row{grid-template-columns:1fr auto}.row .main{grid-column:1/-1}.loanrow{grid-template-columns:1fr auto}}
+@media (prefers-reduced-motion:reduce){.toast{transition:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Controle de acervo</h1>
+  <p class="sub">Cadastre livros, registre saídas e devoluções e acompanhe tudo por categoria.</p>
+  <div id="warn"></div>
+  <div class="stats" id="stats"></div>
+
+  <div class="tabs" role="tablist">
+    <button class="tab" role="tab" data-tab="acervo" id="t-acervo"></button>
+    <button class="tab" role="tab" data-tab="emprestimos" id="t-emprestimos"></button>
+    <button class="tab" role="tab" data-tab="historico" id="t-historico">Histórico</button>
+  </div>
+
+  <section id="v-acervo">
+    <div class="bar">
+      <input type="search" id="q" placeholder="Buscar por título ou autor" aria-label="Buscar por título ou autor">
+      <div class="pills" id="pills"></div>
+      <button class="btn" data-act="add">Adicionar livro</button>
+    </div>
+    <div id="books"></div>
+  </section>
+  <section id="v-emprestimos" hidden><div id="loans"></div></section>
+  <section id="v-historico" hidden><div id="hist"></div></section>
+</div>
+
+<dialog id="dAdd">
+  <h2>Adicionar livro</h2>
+  <form id="fAdd">
+    <div class="field"><label for="aT">Título</label><input id="aT" required maxlength="140"></div>
+    <div class="field"><label for="aA">Autor</label><input id="aA" maxlength="100"></div>
+    <div class="field"><label for="aC">Categoria</label>
+      <select id="aC"><option value="literatura">Literatura</option><option value="tecnico">Técnico</option></select></div>
+    <div class="field"><label for="aQ">Exemplares</label><input id="aQ" type="number" min="1" max="999" value="1" required></div>
+    <div class="actions"><button type="button" class="btn ghost" data-close>Cancelar</button><button class="btn">Salvar livro</button></div>
+  </form>
+</dialog>
+
+<dialog id="dLend">
+  <h2>Registrar saída</h2>
+  <form id="fLend">
+    <p id="lBook" style="margin:0 0 14px"></p>
+    <div class="field"><label for="lW">Nome de quem retirou</label><input id="lW" required maxlength="100"></div>
+    <div class="field"><label for="lD">Devolver até</label><input id="lD" type="date" required></div>
+    <div class="actions"><button type="button" class="btn ghost" data-close>Cancelar</button><button class="btn">Confirmar saída</button></div>
+  </form>
+</dialog>
+<dialog id="dRem"><h2>Lembrete de devolução</h2><p id="remTxt" style="margin:0 0 10px"></p><ul id="remList" style="margin:0 0 14px;padding-left:18px"></ul><div class="actions"><button type="button" class="btn ghost" id="remNotif">Ativar avisos do navegador</button><button type="button" class="btn" data-close>Ok</button></div></dialog>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+const KEY='biblioteca-acervo-v2';
+const SEED=[["Labirinto do fauno","Gillermo del Toro","literatura",52],["O cão dos basketvilles","Arthur Conan Doyle","literatura",62],["Um estudo em vermelho","Arthur Conan Doyle e Michele de Aguiar Vartuli","literatura",57],["Histórias que os jornais não contam","Moacyr Scliar","literatura",77],["Shakespeare nas rimas do cordel","Stélio Torquato Lima","literatura",70],["Depois daquela viagem","Valéria Piassa Polizzi","literatura",73],["Identidade","Nella Larsen","literatura",378],["Minha primeira vez","Luiz Ruffato","literatura",37],["A bagagem","Adélia Prado","literatura",3],["Uns papéis que voam","Flávio José Cardozo","literatura",3],["O menino de alepo","Sumia Sukkar","literatura",1],["Daphine clair","","literatura",3],["Dança com a morte","Jeffrey Deaver","literatura",1],["Um outro brooklyn","Jacqueline Woodson","literatura",1],["Reformatório nickel","Colson Whitehead","literatura",1],["A princesa salva a si mesma neste livro","Amanda Lovelace","literatura",1],["Os meninos do brasil","Ira Levin","literatura",1],["O último segredo do templo","Paul Sussman","literatura",1],["Atos de amor","Elia Kazan","literatura",1],["Marcos rey","Anna Maria Martins","literatura",1],["A sombra do ciúme","Januaria Cristina Alves","literatura",1],["Pelos olhos de sandra","Rosana Rios","literatura",1],["A mercadoria mais preciosa","Jean-Claude Grumberg","literatura",1],["O retrato","Mary Westmacott","literatura",1],["Dublinenses","James Joyce","literatura",1],["Stephen herói","James Joyce","literatura",1],["Fuga","Luana Chnaiderman de Almeida","literatura",1],["Politica estadual de educação ambiental","Governo do Estado da Bahia, Secretaria do Meio Ambiente","literatura",1],["O louco de bergerac- georges simenon","","literatura",1],["Doce vingança de amor","Jacqueline Baird","literatura",1],["Farsa de inês pereira","Gil Vicente","literatura",1],["Juntos na ladeira","Luís Donisete Benzi Grupioni","literatura",1],["Até mais, e obrigado pelos peixes!","Douglas Adams","literatura",1],["Era uma vez no verão","Lisa Jackson","literatura",1],["Amor total e em busca da paixão","Kathie Denosky","literatura",1],["Acordo entre amigos e encontro de vinganca","Kathie Denosky","literatura",1],["Sempre amantes","Abby Green","literatura",1],["O pensamento vivo de picasso","Martin Claret","literatura",1],["O chamado selvagem","Jack London","literatura",1],["O mercador de veneza","William Shakespaeare","literatura",1],["Contos da selva","Horácio Quiroga","literatura",1],["Frankenstein","Mary Shelley","literatura",1],["Oliver twist","Chalés Dickens","literatura",1],["Iracema","José de Alencar","literatura",1],["The masque of the red death","Edgar Allan Poe","literatura",1],["Diários de adão e eva","Mark Twain","literatura",1],["Poliana","Eleanor H. Porter","literatura",1],["The adventures of huckleberry finn","Mark Twain","literatura",1],["Sermões","Antonio Vieira","literatura",1],["O exorcista","William Peter Blatty","literatura",1],["Gente de hemso","August Strindberg","literatura",1],["O homem que plantava árvores","Jean Giono","literatura",1],["O reflexo perdido e outros contos insensatos","E.T.A hofmann","literatura",1],["As crônicas marcianas","Ray Bradbury","literatura",1],["Gilgámesh","Sergio Cappareli","literatura",1],["Romeo and juliet","William Shakespeare","literatura",1],["Sófocles","Édipo Reis","literatura",1],["A moreninha","Joaquim Manuel de Macedo","literatura",1],["O seminarista","Bernardo Guimarães","literatura",1],["Uma história possível","Maria Bernad","literatura",1],["Vendedora de ilusões","Lilian Peake","literatura",1],["Profissão: milionários","Alexandra Sellers","literatura",1],["As flechas de cupido","Kay Thorpe","literatura",1],["O dia mais feliz…","Nicola West","literatura",1],["Em nome do amor","Gina Wilkins","literatura",1],["O preço de um amor","Cathy Williams","literatura",1],["Encontro marcado","Anne Laurence","literatura",1],["Os donos da terra","Janet Dailey","literatura",1],["Doce vingança de amor","Jacqueline Baird","literatura",1],["Duas vidas sem destino","Sandra Canfield","literatura",1],["Horizontes sem fim","Sally Garret","literatura",1],["A ilusão mora em las vegas","Irma Walker","literatura",1],["Fuga alucinada","Lynne Graham","literatura",1],["O amor bate à porta","Carolyn Greene","literatura",1],["De amor também se vive","Kate Denton","literatura",1],["Fugitivos do amor","Bárbara Cartland","literatura",1],["A indomável lady lorinda","Barbara Cartland","literatura",1],["Aposta arriscada","Elizabeth Bevarly","literatura",1],["Dom quixote, o cavaleiro da triste figura","Miguel de Cervantes","literatura",2],["Dom quixote, livro primeiro","Miguel Cervantes = Livros","literatura",1],["Super homem, não-homem, carol e os invisíveis","Carlos Eduardo de Magalhães","literatura",1],["Melhores poemas","Cecília Meireles","literatura",1],["Pantera no porão","Amós Oz","literatura",1],["Sexta feira ou vida selvagem","Michel Tournier","literatura",1],["Dom quixote de la plancha","Laura Bergallo","literatura",1],["13 melhores contos de amor da literatura brasileira","Rosa Amanda Strausz","literatura",1],["Contos de amor, de loucura e de morte","Horácio Quiroga","literatura",1],["A tia tula","Miguel de Unamuno","literatura",1],["Consciência, consequência","Beatriz Prats","literatura",4],["Lima barreto o rebelde imprescindível","Luiz Ricardo Leitão","literatura",4],["Macunaíma","Noemi Jaffe","literatura",1],["Morte e vida severina","João Cabral de Melo Neto","literatura",2],["Melodia mortal","Pedro Bandeira e Guido Carlos Levi","literatura",1],["Sem luz ao amanhecer","Wagner Ferreira","literatura",1],["Fronteiras","Márcia Kupstas","literatura",1],["Texturas e constelações","Antônio Teixeira e Castro","literatura",1],["Palavrear","Ricardo Aleixo","literatura",1],["O imaginário cotidiano","Moacyr Scliar","literatura",1],["Luiza-homem","Domingos Olímpio","literatura",1],["Amar é uma conexão discada","Saulo Dourado","literatura",1],["Amora","Natália Borges Polesso","literatura",1],["Farsa da boa preguiça","Ariano Suassuna","literatura",1],["Casa dos bragas, memória de infância","Rubem","literatura",1],["Triste fim de policarpo quaresma","Lima Barreto","literatura",2],["Lira dos vinte anos","Alvares de Azevedo","literatura",2],["Senhora","José de Alencar","literatura",1],["As aventuras do sr. pickwick","Charles Dickens","literatura",1],["Vai encarar?","Manuel Filho","literatura",1],["De mim já nem se lembra","Luiz Ruffato","literatura",1],["Cafeína","Maurício Torres Assumpção","literatura",1],["Antologia de prosa e versos","Maria Firmina dos Reis","literatura",1],["Confraria van gogh","Mirian da Silva Cavalcanti","literatura",1],["Estranho caso do cachorro morto","Mark Haddon","literatura",1],["A professora e o nobel gabriel garcia marquez","Beatriz Parga","literatura",1],["As rugosidades do caos","Luis Dolhnikoff","literatura",1],["Mar i.o","Ian Fraser","literatura",1],["Sofia","Sidney Rocha","literatura",1],["Contos mais que mínimos","Heloisa Seixas","literatura",1],["Sombras de reis barbudos","José J. Veiga","literatura",1],["Leo e as caixas de músicas","Ricardo Prado","literatura",1],["Serafim ponte grande","Oswald de Andrade","literatura",1],["Entre as junturas dos ossos","Vera Lúcia de Oliveira","literatura",1],["Conversa com educadores","Literatura Para Todos","literatura",2],["Espelho mágico","Mário Quintana","literatura",1],["Êxtase, de birra com jorge amado e outras crônicas grapiunas","Agenor Gasparetto","literatura",1],["Dom casmurro: o filme","Toni Brandão","literatura",1],["Relembro","Bibi da Pieve","literatura",1],["Manuelzão e miguilim(corpo de baile","João Guimarães Rosa","literatura",1],["As santas","Nair Ilelis","literatura",1],["O peru de natal e outros contos","Mário de Andrade","literatura",1],["Os jacarés","Carlos Eduardo Magalhães","literatura",1],["Enamorados- cléo busatto","","literatura",1],["Amor por anexins e capital federal","Artur Azevedo","literatura",1],["Vozes da ficção, narrativas do mundo do trabalho","claudia de A. campos","literatura",1],["Pedro mico","Antônio Callado","literatura",1],["O próximo da fila","Henrique Rodrigues","literatura",1],["Cabelos molhados","Luis Pimentel","literatura",1],["Ó abre alas","Maria Adelaide Amaral","literatura",1],["Luto","Eduardo Halfon","literatura",1],["Escrava isaura","Bernardo Guimarães","literatura",1],["A pequena prisão","Igor Mendes","literatura",1],["A queda para o alto","Herzer","literatura",1],["Amor oculto","Lara Elias","literatura",1],["O mulo","Darcy Ribeiro","literatura",1],["A sucessora","Carolina Nabuco","literatura",1],["Olhai os lírios do campo","Erico Veríssimo","literatura",1],["Poemas de ouvido","Renato Rocha","literatura",1],["Três homens falam de amor","Affonso Romano de Sant’anna","literatura",1],["A vida é uma festa","Lauro Trevisan","literatura",1],["Nova antologia poética","Mário Quintana","literatura",1],["Feijão e o sonho","Origines Lessa","literatura",1],["A beata maria do egito","Rachel de Queiroz","literatura",1],["Homens e carangueijos","Josué de Castro","literatura",1],["Leite do peito","Regina Miranda","literatura",1],["O palácio japonês","José Mauro de Vasconcelos","literatura",1],["O largo da palma","Adonias Filho","literatura",2],["Petrolina","Carlos Eduardo Magalhães","literatura",1],["Literatura comentada","Guimarães Rosa","literatura",1],["Professor e aluno","Machado de Assis","literatura",1],["Solo mae","Vinicius Cellurale Novaes","literatura",4],["O mulato","Aluísio Azevedo","literatura",1],["Batata cozida mingau de cara","Eloí Elisabete Bocheco","literatura",2],["Contos de aprendiz","Carlos Drummond de Andrade","literatura",1],["Poesia do brasil","Ademir Bacca Claudia Gonçalves","literatura",1],["Cinco minutos","José Alencar","literatura",1],["A viuvinha","José Alencar","literatura",1],["O gaúcho","José Alencar","literatura",1],["Contemplativo","Rafael Gama Moreira","literatura",1],["Inocência","Visconde de Taunay","literatura",1],["O cortiço","Aluísio Azevedo","literatura",1],["Frases, caos e versos","Lutero Rodrigues B. de Melo","literatura",1],["Os imortais da literatura universal","","literatura",1],["Coração de bilionário","Ruth Cardello","literatura",1],["Cecéu, poeta do céu","A Deluxe Souza","literatura",1],["Quando eu voltei, tive uma surpresa","Jose Rufino dos Santos","literatura",1],["Cantos da semente do martírio","Gabriella Santos Rodrigues de Souza","literatura",5],["O homem que não parar de crescer","Marina Colasanti","literatura",1],["Contos brasileiros","Alipio Freire","literatura",4],["Carlos drummond de andrade","Antonieta Cunha","literatura",1],["Terra dos tesouros","Luiz Antônio Aguiar","literatura",1],["História do menino que lia o mundo","Carlos Rodrigues Brandão","literatura",3],["Descanse em paz, meu amor…","Pedro Bandeira","literatura",1],["Poesia completa","Jorge Lima","literatura",1],["Morte e vida severina","João Cabral de Melo Neto","literatura",1],["O próximo da fila","Henrique Rodrigues","literatura",1],["Aníbal machado","João Ternura","literatura",1],["Arnaquistas, graças a Deus","Zélia Gattai","literatura",1],["Histórias de um viajante","Marina Colasanti","literatura",1],["Místicos e mártires","José Carlos B. Borges","literatura",1],["Meu rosto não será como o teu e outros medos","Marcos Apóstolo","literatura",1],["Viagens de marco polo","Ana Maria Machado","literatura",1],["Desenganos da vida humana e outros poemas","Geórgio de Matos","literatura",1],["As vítimas algozes","Joaquim Manoel de Macedo","literatura",2],["Meu quintal é maior do que o mundo","Manoel de Barros","literatura",1],["Assasinato na biblioteca","Helena Gomes","literatura",1],["A volta por cima","Carlos Heitor Cony","literatura",1],["O pagador de promessas","Dias Gomes","literatura",1],["Nós e os outros","","literatura",1],["Meu pé de laranja lima","José Mauro de Vasconcelos","literatura",1],["Vamos caçar papagaios","Cassiano Ricardo","literatura",1],["A pátria de chuteiras","Nelson Rodrigues","literatura",1],["Quatro dias na vida do joel","Victor Vasconcellos","literatura",1],["Maria da tempestade","João Mohana","literatura",1],["Chasimiro de abreu","","literatura",1],["Evasão","José Alberto Silveira Santos","literatura",1],["Feliz ano novo","Rubem Fonseca","literatura",4],["Vamos comprar um poeta","Afonso Cruz","literatura",1],["Memórias de um sargento de milícias","Manoel A. de Almeida","literatura",1],["Luzia de Lagoa Santa","","literatura",69],["A fórmula preferida do professor","Yoko Ogawa","literatura",1],["Para gostar de ler","Carlos Drummond de Andrade","literatura",1],["A velha izerguil e outros contos","Maksim Górki","literatura",1],["Contos de sebastopol","Liev Tolstoi","literatura",1],["Dois hussardos","Lev Tolstoi","literatura",1],["O ladrao honesto","F. Dostoiévski","literatura",1],["O menino que queria mudar o mundo","Max Bandeira","literatura",2],["Devaneio em ubatã","Eduardo Tavares","literatura",1],["Oliver twist","Charles Dickens","literatura",1],["Melhores poemas","Cora Coralina","literatura",1],["Tudo que deixamos pra trás","Maja Lunde","literatura",1],["Rebeldes brasileiros","Carlos Amigos de Bolso","literatura",2],["Noites egípcias e outros contos","Alexander Púchkin","literatura",1],["Por causa dele(s) -isaac nunes filho","","literatura",1],["Boa sorte dos prazeres","Eduardo Tavares","literatura",1],["O beijo negado","Pedro Bandeira","literatura",1],["As artimanhas do napoleão","Antônio Cestaro","literatura",1],["Entre silêncios e gestos","Marcos Arthur","literatura",1],["Uns papéis que voam","Flávio José Cardozo","literatura",1],["Livro de versos","Rubem Braga","literatura",1],["A cidade das sombras dançantes","Pedro Veludo","literatura",1],["Incidente em antares","Erico Veríssimo","literatura",1],["A arte de viver e outras artes","Aníbal M. Machado","literatura",1],["A história do menino que lia o mundo","Carlos Rodrigues Brandão","literatura",1],["O vampiro que descobriu o brasil","Ivan Jaf","literatura",1],["Dois pinheiros e o mar e outras crônicas sobre o meio ambiente","Rubem Braga","literatura",1],["Contos da carochinha","Figueiredo Pimentel","literatura",1],["Lira dos vinte anos","Álvares Azevedo","literatura",2],["Cidade digital","Evandro Prestes Guerreiro","literatura",1],["O nome da rosa","Umberto Eco","literatura",1],["Toda poesia","Ferreira Gullar","literatura",1],["O guardião","Nicholas Sparks","literatura",1],["O herói invisível","Luca Cognolato e Silva Delfrancia","literatura",1],["Da terra a lua","Estevão Ribeiro","literatura",1],["O rei borboleta","Dionísio Jacob","literatura",1],["Bem vindos a casa da neblina","Lino de Albergaria","literatura",1],["O menino que sobreviveu","Rhiannon Navin","literatura",1],["2 ou+corpos no mesmo espaço","Arnaldo Antunes","literatura",1],["O pequeno príncipe","Olégario Alfredo","literatura",1],["Nariz de vidro","Mário Quintana","literatura",1],["Os restos mortais","Fernando Sabino","literatura",1],["Pride and prejudice","Jane Austen","literatura",1],["Odisseia","Ruth Rocha","literatura",1],["Shakespeare nas rimas do cordel","Stelio Torquato Lima","literatura",1],["Meus primeiros contos","","literatura",1],["Historinhas pescadas","","literatura",2],["De primeira viagem","Heloisa Pietro","literatura",1],["Cinco estrelas","Ana Maria Machado","literatura",2],["Descoberta do amor em prosa","Elias José","literatura",1],["Os três mosqueteiros","","literatura",1],["Alexandre dumas","","literatura",1],["Quem conta um conto","Ana Maria Machado","literatura",1],["As revoltas do vampiro","Ivan Jaf","literatura",1],["As danças do pequeno polegar","","literatura",1],["O enigma de iracema","Rosana Rios","literatura",1],["O nome do jogo","Will Eisner","literatura",1],["Almanaque do aluá n2","","literatura",2],["Contra o brasil","Diogo Mainardi","literatura",1],["O globo: grandes entrevistas","Os Escritores","literatura",1],["Coleção literatura para todos","Leo O Pardo","literatura",1],["Zumbi dos palmares","Flávio dos Santos Gomes","literatura",1],["A legião estrangeira","Clarice Lispector","literatura",2],["O homem com cabeça de urubu","Glauber Costa","literatura",1],["Leda jesuino","Elizete Passos","literatura",1],["Contos russos juvenis","","literatura",1],["Nos","Ievgueni Zamiatin","literatura",1],["A autobiografia do poeta escravo","João Francisco Manzano","literatura",1],["O arco íris de feyman","Leonard Mlodinow","literatura",1],["Giane","Guilherme Fiuza","literatura",1],["A áfrica na sala de aula","Leila Leite Hernandez","literatura",1],["D. pedro II a história não contada","Paulo Rezzuti","literatura",31],["Atlas national geographic brasil","","literatura",1],["Atlas national geographic ásia","","literatura",1],["Atlas national geographic ásia 2","","literatura",1],["Atlas national geographic américa do sul","","literatura",1],["Atlas national geographic europa","","literatura",1],["Atlas national geographic europa 2","","literatura",1],["Atlas national geographic europa 3","","literatura",1],["Atlas national geographic américa do norte e central","","literatura",1],["Atlas national geographic áfrica 1","","literatura",1],["Atlas national geographic oceania, polos e oceanos","","literatura",1],["Atlas national geographic a terra e o universo","","literatura",1],["Atlas national geographic ásia em imagens","","literatura",1],["Atlas national geographic europa em imagens","","literatura",1],["Atlas national geographic áfrica e oriente médio em imagens","","literatura",1],["Atlas national geographic américas em imagens","","literatura",1],["Atlas national geographic oceanos e o universo em imagens","","literatura",1],["Atlas national geographic a terra em números","","literatura",1],["Atlas national geographic dicionário geográficos AB","","literatura",1],["Atlas national geographic dicionário geográficos CE","","literatura",1],["Atlas national geographic dicionários geográficos FK","","literatura",1],["Atlas national geographic dicionários geográficos LN","","literatura",1],["Atlas national geographic dicionários geográficos 0/SA","","literatura",1],["Atlas national geographic dicionários geográficos Sc/Z","","literatura",1],["Atlas national geographic índice de topônimos","","literatura",1],["Historia oculta da áfrica nos anos iniciais do ensino fundamental: Os adinkra","","literatura",4],["A áfrica da sala de aula, visita à história contemporânea","","literatura",4],["História geral da áfrica século XVI ao século XX","","literatura",2],["História geral da áfrica pré história ao século XVI","","literatura",3],["História geral da áfrica","África Desde 1935","literatura",1],["História geral da áfrica","África Sob Dominação Colonial 1880-1935","literatura",1],["História geral da áfrica","Metodologia e Pré-História da África","literatura",1],["História geral da áfrica","áfrica do século VII ao XI","literatura",1],["História geral da áfrica","áfrica do século XII ao XVI","literatura",1],["História geral da áfrica","África Antiga","literatura",1],["História geral da áfrica","áfrica do século XIX a década de 1880","literatura",1],["História geral da áfrica","áfrica do século XVI ao XVIII","literatura",1],["A ditadura militar no brasil","","literatura",1],["Rebeldes brasileiros","Caros Amigos","literatura",1],["Retrato do brasil","","literatura",1],["Coleções caros amigos","","literatura",2],["Povos indígenas no brasil","","literatura",1],["Maurícia","Adriano Messias","literatura",1],["A ditadura militar no brasil","A História Em Cima de Fatos","literatura",1],["Nossas bandeiras","","literatura",1],["Liberdade por um fio","João José Reis","literatura",1],["O índio que mora em nossa cabeça","Spensy Pimentel","literatura",2],["História do brasil","Luis César Amad Costa","literatura",1],["O fio d’água do quilombo","Heloisa Pires Lima","literatura",1],["A guerra de canudos","Cristina Coin","literatura",1],["Um praticante da democracia: otávio mangabeira","","literatura",2],["Belo monte","José Rivar Macedo","literatura",1],["Mortos e desaparecidos baianos","","literatura",2],["Nossa casa está em chamas","Greta e Svante Thunbeerg","literatura",1],["História do brasil","Olavo Leonel Ferreira","literatura",1],["Belo monte, uma história da guerra de canudos","José Rivar Macedo","literatura",3],["O que é o brasil?","Roberto Damatta","literatura",1],["O ato e o fato","Carlos Heitor Cony","literatura",1],["Ingleses no brasil","Sheila Hue","literatura",1],["Abordagens e concepções de território","Marcos Aurélio","literatura",34],["Minha vida","Golda Meir","literatura",1],["Refugiados de idomeni","Gabriel Bonis","literatura",1],["Origens africanas do brasil contemporâneo","Kabengele Munanga","literatura",1],["História moderna e contemporânea","Leonel Itaussu A. Mello","literatura",1],["História geral","Cláudio Vicentino","literatura",1],["Atlas geográfico ilustrado","Graça Maria Lemos Ferreira","literatura",2],["A coleção das setes maravilhas do mundo moderno","","literatura",8],["Tecnologia de alimentos","Alimentos de Origem Animal","literatura",12],["Os serviços de alimentação","","literatura",5],["As armadilhas de uma cozinha","","literatura",4],["Tecnologia do processamento de alimentos","","literatura",33],["2º curso de pecuária leiteira","","literatura",1],["Criação de moluscos e crustáceos","","literatura",1],["Criação de frango e galinha caipira","","literatura",1],["Produção de coelhos","","literatura",1],["Ciência, tecnologia e inovação para amazônia","","literatura",1],["Contos de mistérios e assombros","Nelson Albissú","literatura",1],["Laboratório de virologia","josé A.N. candeias","literatura",10],["Sobre a evolução do conceito de campesinato","Guzman • Molina","literatura",1],["Rochas ornamentais","","literatura",2],["Criação de peixes","","literatura",1],["Mosca dos chifres","","literatura",1],["Alimentação dos suínos","","literatura",1],["Monta controlada","","literatura",2],["Buffel grass","","literatura",1],["Forrageira promissora para as zonas secas","","literatura",1],["Silo trincheira","","literatura",1],["Alimentação das vacas leiteiras","","literatura",1],["Manual do criador","Agência Estadual de Defesa Agropecuária da Bahia","literatura",15],["Avaliação de suplementos minerais para bovinos comercializados no estado da bahia","","literatura",1],["Criação de aves semiconfinadas","Geração de Trabalho e Renda","literatura",1],["Evolução das espécies","Pensamento Científico, Religioso e Filosófico","literatura",1],["Plantio direto","","literatura",1],["Treinamento de tratorista","","literatura",2],["Manutenção de tratores de agrícolas mecanização de pequenas propriedades","","literatura",1],["Construção de cercas na fazenda","","literatura",1],["Agroecologia","","literatura",2],["Eros e psiquê, piramo e tisbe e outros amores da mitologia grega","Maria Clara Cavalcanti","literatura",1],["Avaliação de impacto ambiental: conceitos e métodos","Luis Enrique Sanchez","literatura",1],["Técnologia de alimentos","","literatura",2],["Administração- chiavaneto","","literatura",2],["Argamassa para revestimentos","","literatura",1],["O restaurante no fim do universo","Douglas Adams","literatura",1],["Inclusão digital","Edilson Cazeloto Cantares Amazônicos - João de Jesus Paes Loureiro","literatura",1],["Boas práticas de laboratório- maria fátima da costa almeida","","literatura",1],["O poder da tv","José Arbex","literatura",1],["O peso da luz","Ana Miranda","literatura",1],["Aventura na ilha do medo","josé carlos S. moraes","literatura",1],["A barca dos amantes","Antônio Barreto","literatura",1],["Redemoinho em dia quente","Jarid Arraes","literatura",1],["Enquanto os dentes","Carlos Eduardo Pereira","literatura",1],["Amor e guerra em canudos","Lourenço Cazarré","literatura",1],["Histórias de cego","Marcos Lima","literatura",1],["A árvore de cantos","Anne Ballester Soares","literatura",1],["Quarteto mágico","Murilo Rubião","literatura",1],["Queria brincar de mudar de destino","Gilvã Mendes Retratos de Boa Nova - Nesmar Andrade","literatura",1],["Tarja branca o libreto que faltava","Hélio Leites","literatura",1],["O grito dos drogados","Maria José Franklin Moreira","literatura",1],["Na minha pele","Lázaro Ramos","literatura",1],["Cidade digital","Evandro Prestes Guerreiro","literatura",1],["As armadilhas de uma cozinha","Coleção Higienes dos Alimentos Vol. 3","literatura",1],["Bioestatica","Bérquo • Souza • Gotlieb","literatura",1],["O retrato de dorian gray","","literatura",1],["Indicação de procedência","Beneficiamento de Cacau de Qualidade Superior","literatura",1],["Atrativos naturais do município de boa Nova","","literatura",14],["Sistema de produção banana/cacau para recôncavo baiano","","literatura",1],["Estatísticas do meio rural","","literatura",1],["Eu, valentão","Giusi Parisi","literatura",1],["A rosa perdida","Serdar Ozkan","literatura",1],["Penélope manda lembranças","Marina Colasanti","literatura",1],["Se eu fosse aquilo","Ricardo Azevedo","literatura",1],["Tudo ao mesmo tempo agora","Ana Maria Machado","literatura",1],["Contos de guy de mauspassant","","literatura",1],["Lucíola em cordel","Marco Haurelio","literatura",1],["A causa secreta","Machado de Assis","literatura",1],["A história do menino que lia o mundo","Carlos Rodrigues Brandão","literatura",1],["Adubação orgânica: composto orgânicos e bio fertilizantes","","literatura",1],["Chula comportamento traduzido em canção","","literatura",1],["Desenho técnico industrial","W Schneider","tecnico",9],["Boletim do herbário ezechias paulo heringer","Vol. 13","tecnico",1],["Boletim do herbário ezechias paulo heringer","Vol. 7","tecnico",4],["Boletim do herbário ezechias paulo heringer","Vol. 6","tecnico",4],["Boletim do herbário ezechias paulo heringer","Vol. 5","tecnico",1],["Boletim do herbário ezechias paulo heringer","Vol. 11","tecnico",1],["Boletim do herbário ezechias paulo heringer","Vol. 4","tecnico",6],["Boletim do herbário ezechias paulo heringer","Vol. 10","tecnico",1],["Boletim do herbário ezechias paulo heringer","Vol. 9","tecnico",1],["Boletim do herbário ezechias paulo heringer","Vol. 8","tecnico",5],["Logística","Práticas, Técnicas e Processos de Melhoria","tecnico",38],["Técnicas de laboratório","","tecnico",13],["Agroecologias: bases científicas para uma agricultura sustentável","","tecnico",3],["Fundamentos de agroecologia","","tecnico",147],["Manual de bioquímica","Roteiros de Análises de Bioquímicas Qualitativas e Quantitativas","tecnico",1],["Metodologia científica","","tecnico",10],["Topografia geral","","tecnico",7],["Microbiologia dos alimentos","Bernadette D. Gombossy de Melo Franco","tecnico",12],["Noções de farmacologia","","tecnico",24],["Controles e normas sanitárias","","tecnico",93],["Atlas de anatomia","","tecnico",3],["Introdução a informática","","tecnico",100],["Processos de saúde/doença e seus condicionantes","","tecnico",90],["Poluição ambiental e saúde pública","","tecnico",9],["Aprendendo e ensinando ciências","Práticas Vivenciadas Em Um Projeto de Difusão Científica","tecnico",1],["Biologia da conservação","Richard B. Primack","tecnico",1],["Manual técnico de serraria","Instalação, Funcionamento e Manutenção de Serrarias","tecnico",1],["Avaliação e perícia ambiental","","tecnico",1],["Coleta seletiva de resíduos orgânicos e inorgânicos","","tecnico",1],["Iniciando um pequeno grande negócio agro industrial","Processamento de Carne Bovina","tecnico",1],["Extremos da produção","Experiências de Quem Trabalha Com Leite de Norte A Sul do Brasil","tecnico",1],["Guia do produtor rural","","tecnico",1],["Taurus","Hippus","tecnico",1],["Agroquímica","Batata, Alimento Para Milhões","tecnico",1],["Agroquímica","Fasciolose, Diagnóstico e Controle","tecnico",1],["Agroquímica","Principais Doenças da Cultura do Trigo","tecnico",1],["Computador ajuda a dar leite","","tecnico",1],["Tempo de cana","Forrageira Ganha Espaço Como Opção de Alimento No Inverno","tecnico",1],["Guia rural","Nasce A Orquídea de Proveta","tecnico",1],["Guia rural","Deste Mato Sai Coelho","tecnico",1],["Guia rural","O Inseminador de Dólares","tecnico",1],["Guia rural","A Galinha da Carne de Ouro","tecnico",1],["Guia rural","O Que Vai Dar Dinheiro Em 88","tecnico",1],["Guia rural","Búfalos","tecnico",1],["Guia rural","A Força do Milho Esperto","tecnico",1],["Guia rural","Bicho Bom de Trabalho","tecnico",1],["Ordenha bem feita","Rotina No Manejo e Higiene Asseguram Um Leite Melhor","tecnico",1],["Uréia sem risco","Uso Melhora Qualidade Volumoso e Amplia A Produção de Leite","tecnico",1],["Atenção ao pós-parto","Vacas Recém Paridas Exigem Cuidado Especial","tecnico",1],["Sistema de produção","pasto X confinamento","tecnico",1],["Custo avaliado","Controle Aumenta A Eficiência do Negócio","tecnico",1],["Semente certa","Boa Alimentação do Rebanho Depende do Sucesso da Lavoura","tecnico",1],["Pastejo perfeito","Rotação Permite Produzir Mais, A Baixo Custo","tecnico",1],["Susto mundial","Como A Crise Na Ásia Afeta A Agricultura","tecnico",1],["Agroquímica","Controle de Pragas e Doenças dos Curtos","tecnico",1],["Agroquímica","Moscas Mineradoras das Folhas das Plantas","tecnico",1],["Agroquímica","A Cultura da Maçã No Brasil","tecnico",1],["Agenda pecuária","","tecnico",1],["Guia rural","Receitas de Quem Lucrou Em 87","tecnico",1],["Guia rural","doma. Mais vale um papo que um trigo","tecnico",1],["Guia rural","Fazenda de Caça","tecnico",1],["Gemas do mundo","","tecnico",1],["Agroecologia: bases científicas para uma agricultura sustentável","","tecnico",1],["Planejamento ambiental teoria e prática","","tecnico",1],["O agronegocio brasileiro","Caprina e Ovina","tecnico",1],["Saneamento básico","Fonte de Saúde e Bem Estar","tecnico",1],["Pós graduação em gestão ambiental","","tecnico",6]];
+const CATS={literatura:'Literatura',tecnico:'Técnico'};
+let S={books:[],loans:[]}, view='acervo', cat='todos', q='', lendId=null, page=1, PER=50, saveOk=true;
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+const p2=n=>String(n).padStart(2,'0');
+const dstr=d=>d.getFullYear()+'-'+p2(d.getMonth()+1)+'-'+p2(d.getDate());
+const today=()=>dstr(new Date());
+const plus=n=>{const d=new Date();d.setDate(d.getDate()+n);return dstr(d)};
+const fd=s=>new Date(s.length<=10?s+'T00:00':s).toLocaleDateString('pt-BR');
+const norm=s=>String(s).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+
+try{const r=localStorage.getItem(KEY);if(r){const o=JSON.parse(r);if(o&&Array.isArray(o.books)&&Array.isArray(o.loans))S=o}}catch(e){saveOk=false}
+if(!S.books.length&&!S.loans.length){S.books=SEED.map((s,i)=>({id:'s'+i,title:s[0],author:s[1],cat:s[2],total:s[3],avail:s[3]}))}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S));saveOk=true}catch(e){saveOk=false}}
+
+let tt;function toast(m){const t=$('toast');t.textContent=m;t.classList.add('on');clearTimeout(tt);tt=setTimeout(()=>t.classList.remove('on'),2600)}
+const bookOf=id=>S.books.find(b=>b.id===id);
+const active=()=>S.loans.filter(l=>!l.ret);
+const titleOf=l=>(bookOf(l.bookId)||{title:'Livro removido'}).title;
+const dueToday=()=>{const t=today();return active().filter(l=>l.due===t)};
+const dueTomorrow=()=>{const t=plus(1);return active().filter(l=>l.due===t)};
+const names=list=>list.slice(0,3).map(l=>esc(titleOf(l))+' ('+esc(l.who)+')').join(', ')+(list.length>3?' e mais '+(list.length-3):'');
+
+function render(){
+  const out=active(), late=out.filter(l=>l.due<today()).length;
+  const copies=S.books.reduce((a,b)=>a+b.total,0);
+  const dt=dueToday(),dm=dueTomorrow();
+  $('warn').innerHTML=(saveOk?'':'<div class="warnbar">Não foi possível salvar neste navegador. Os dados podem se perder ao fechar a página.</div>')
+    +(dt.length?'<div class="warnbar info">Devolução prevista para hoje: '+names(dt)+'. <button class="btn" data-act="rem">Ver lista</button></div>':'')
+    +(dm.length?'<div class="warnbar info">Amanhã vence a devolução de '+names(dm)+'.</div>':'');
+  $('stats').innerHTML=`<div><b>${S.books.length}</b><span>títulos</span></div><div><b>${copies}</b><span>exemplares</span></div><div><b>${out.length}</b><span>emprestados</span></div><div class="${late?'late':''}"><b>${late}</b><span>em atraso</span></div>`;
+  $('t-acervo').textContent='Acervo ('+S.books.length+')';
+  $('t-emprestimos').textContent='Empréstimos ('+out.length+')';
+  document.querySelectorAll('.tab').forEach(t=>t.setAttribute('aria-selected',t.dataset.tab===view));
+  ['acervo','emprestimos','historico'].forEach(v=>$('v-'+v).hidden=v!==view);
+  if(view==='acervo')renderBooks();
+  if(view==='emprestimos')renderLoans();
+  if(view==='historico')renderHist();
+  remind();soon();
+}
+
+function pager(pages){
+  if(pages<2)return '';
+  const s=new Set([1,pages,page-2,page-1,page,page+1,page+2].filter(n=>n>=1&&n<=pages));
+  let out='',prev=0;
+  [...s].sort((a,b)=>a-b).forEach(n=>{if(n-prev>1)out+='<span class="gap">…</span>';out+='<button class="pill" data-act="pg" data-k="'+n+'" aria-pressed="'+(n===page)+'" aria-label="Aba '+n+'">'+n+'</button>';prev=n});
+  return '<div class="pager"><button class="pill" data-act="pg" data-k="'+(page-1)+'" '+(page<2?'disabled':'')+'>‹ Anterior</button>'+out+'<button class="pill" data-act="pg" data-k="'+(page+1)+'" '+(page>=pages?'disabled':'')+'>Próxima ›</button></div>';
+}
+
+function renderBooks(){
+  const n=k=>S.books.filter(b=>k==='todos'||b.cat===k).length;
+  $('pills').innerHTML=[['todos','Todos']].concat(Object.entries(CATS)).map(([k,l])=>`<button class="pill" data-act="cat" data-k="${k}" aria-pressed="${cat===k}">${l} (${n(k)})</button>`).join('');
+  const nq=norm(q);
+  const list=S.books.filter(b=>(cat==='todos'||b.cat===cat)&&(!nq||norm(b.title+' '+b.author).includes(nq))).sort((a,b)=>a.title.localeCompare(b.title,'pt-BR'));
+  if(!S.books.length){$('books').innerHTML='<div class="empty">Nenhum livro cadastrado ainda. Use “Adicionar livro” para começar o acervo.</div>';return}
+  if(!list.length){$('books').innerHTML='<div class="empty">Nenhum livro encontrado com esse filtro.</div>';return}
+  const pages=Math.ceil(list.length/PER);if(page>pages)page=pages;if(page<1)page=1;
+  const from=(page-1)*PER,shown=list.slice(from,from+PER);
+  $('books').innerHTML=(pages>1?'<p class="by" style="margin:0 0 4px">Aba '+page+' de '+pages+' · livros '+(from+1)+' a '+(from+shown.length)+' de '+list.length+'</p>'+pager(pages):'')+'<ul class="list">'+shown.map(b=>`<li class="row ${b.cat}"><div class="main"><strong>${esc(b.title)}</strong><span class="by">${esc(b.author||'Autor não informado')}</span></div><span class="tag ${b.cat}">${CATS[b.cat]}</span><span class="qty ${b.avail?'':'out'}">${b.avail} de ${b.total} disponíveis</span><button class="btn" data-act="lend" data-id="${b.id}" ${b.avail?'':'disabled'}>Registrar saída</button></li>`).join('')+'</ul>'+pager(pages);
+}
+
+function renderLoans(){
+  const list=active().sort((a,b)=>a.due.localeCompare(b.due));
+  if(!list.length){$('loans').innerHTML='<div class="empty">Nenhum livro emprestado no momento.</div>';return}
+  $('loans').innerHTML='<ul class="list">'+list.map(l=>{
+    const b=bookOf(l.bookId)||{title:'Livro removido',cat:'literatura'}, isLate=l.due<today();
+    return `<li class="row loanrow ${isLate?'late':b.cat}"><div class="main"><strong>${esc(b.title)}</strong><span class="by">${esc(l.who)} · saiu em ${fd(l.out)} · devolver até ${fd(l.due)}</span></div>${isLate?'<span class="tag late">Atrasado</span>':'<span class="tag '+b.cat+'">'+CATS[b.cat]+'</span>'}<button class="btn" data-act="ret" data-id="${l.id}">Registrar devolução</button></li>`}).join('')+'</ul>';
+}
+
+function renderHist(){
+  const ev=[];
+  S.loans.forEach(l=>{const t=titleOf(l);
+    ev.push({t:l.out,txt:`Saída: <strong>${esc(t)}</strong> para ${esc(l.who)}`});
+    if(l.ret)ev.push({t:l.ret,txt:`Devolução: <strong>${esc(t)}</strong> por ${esc(l.who)}`})});
+  ev.sort((a,b)=>b.t.localeCompare(a.t));
+  if(!ev.length){$('hist').innerHTML='<div class="empty">As saídas e devoluções aparecem aqui.</div>';return}
+  $('hist').innerHTML='<ul class="list">'+ev.slice(0,150).map(e=>`<li class="row hist"><span class="by">${fd(e.t)}</span><span>${e.txt}</span></li>`).join('')+'</ul>';
+}
+
+/* Lembretes de devolução */
+const SLOTS=[7,9,11,13];
+function slotAt(d){const hr=d.getHours();if(hr<7||hr>13)return null;return SLOTS.filter(s=>hr>=s).pop()}
+let shownKey='',soonDay='';
+function remind(force){
+  const list=dueToday();
+  if(!list.length)return;
+  const sl=slotAt(new Date());
+  if(sl===null&&!force)return;
+  const k=today()+'-'+sl;
+  let seen='';try{seen=localStorage.getItem('bib-lembrete')||''}catch(e){}
+  if(!force&&(seen===k||shownKey===k))return;
+  shownKey=k;try{localStorage.setItem('bib-lembrete',k)}catch(e){}
+  const hora=sl===null?'':' ('+p2(sl)+':00)';
+  $('remTxt').textContent='Hoje é o prazo de devolução de '+list.length+(list.length>1?' livros':' livro')+hora+':';
+  $('remList').innerHTML=list.map(l=>'<li><strong>'+esc(titleOf(l))+'</strong> — '+esc(l.who)+'</li>').join('');
+  $('remNotif').hidden=!('Notification' in window)||Notification.permission==='granted';
+  if(!$('dRem').open)$('dRem').showModal();
+  try{if('Notification' in window&&Notification.permission==='granted')new Notification('Devolução de livros hoje',{body:list.length+(list.length>1?' livros vencem':' livro vence')+' hoje.'})}catch(e){}
+}
+function soon(){
+  const dm=dueTomorrow();if(!dm.length)return;
+  const t=today();let seen='';try{seen=localStorage.getItem('bib-aviso-amanha')||''}catch(e){}
+  if(seen===t||soonDay===t)return;
+  soonDay=t;try{localStorage.setItem('bib-aviso-amanha',t)}catch(e){}
+  toast('Amanhã vence a devolução de '+dm.length+(dm.length>1?' livros':' livro')+'.');
+}
+$('remNotif').addEventListener('click',()=>{try{Notification.requestPermission().then(p=>{toast(p==='granted'?'Avisos do navegador ativados':'Permissão negada');$('remNotif').hidden=p==='granted'})}catch(e){toast('Este navegador não permite avisos aqui')}});
+
+document.addEventListener('click',e=>{
+  const tab=e.target.closest('[data-tab]');if(tab){view=tab.dataset.tab;render();return}
+  if(e.target.closest('[data-close]')){e.target.closest('dialog').close();return}
+  const el=e.target.closest('[data-act]');if(!el)return;
+  const act=el.dataset.act;
+  if(act==='cat'){cat=el.dataset.k;page=1;render()}
+  if(act==='pg'){page=+el.dataset.k;renderBooks();$('v-acervo').scrollIntoView({block:'start'})}
+  if(act==='add'){$('fAdd').reset();$('dAdd').showModal();$('aT').focus()}
+  if(act==='lend'){const b=bookOf(el.dataset.id);if(!b||!b.avail)return;lendId=b.id;$('lBook').innerHTML='Livro: <strong>'+esc(b.title)+'</strong>';$('fLend').reset();$('lD').value=plus(14);$('dLend').showModal();$('lW').focus()}
+  if(act==='ret'){const l=S.loans.find(x=>x.id===el.dataset.id);if(!l||l.ret)return;l.ret=new Date().toISOString();const b=bookOf(l.bookId);if(b)b.avail=Math.min(b.total,b.avail+1);save();render();toast('Devolução registrada')}
+  if(act==='rem')remind(true);
+});
+$('q').addEventListener('input',e=>{q=e.target.value;page=1;renderBooks()});
+
+$('fAdd').addEventListener('submit',e=>{
+  e.preventDefault();
+  const title=$('aT').value.trim(),author=$('aA').value.trim(),c=$('aC').value,n=Math.max(1,parseInt($('aQ').value,10)||1);
+  if(!title)return;
+  const dup=S.books.find(b=>norm(b.title)===norm(title)&&norm(b.author||'')===norm(author)&&b.cat===c);
+  if(dup){dup.total+=n;dup.avail+=n;toast('Livro já cadastrado: exemplares somados')}
+  else{S.books.push({id:uid(),title,author,cat:c,total:n,avail:n});toast('Livro adicionado ao acervo')}
+  save();$('dAdd').close();page=1;cat='todos';q='';$('q').value='';view='acervo';render();
+});
+
+$('fLend').addEventListener('submit',e=>{
+  e.preventDefault();
+  const b=bookOf(lendId),who=$('lW').value.trim(),due=$('lD').value;
+  if(!b||!b.avail||!who||!due)return;
+  b.avail--;S.loans.push({id:uid(),bookId:b.id,who,out:new Date().toISOString(),due,ret:null});
+  save();$('dLend').close();render();toast('Saída registrada');
+});
+
+save();render();
+setInterval(remind,30000);setInterval(soon,60000);
+</script>
+</body>
+</html>
